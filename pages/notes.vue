@@ -3,10 +3,7 @@ import type { Database } from "types/database.types";
 const client = useSupabaseClient<Database>();
 const user = useSupabaseUser();
 
-const title = ref("");
-const body = ref("");
-
-const loading = ref(false);
+const currentNote = ref("");
 
 const { data: notes, refresh: refreshNotes } = await useAsyncData(
   "notes",
@@ -21,61 +18,40 @@ const { data: notes, refresh: refreshNotes } = await useAsyncData(
   }
 );
 
-const createNote = async () => {
-  if (user.value?.id === undefined) {
-    return;
+useHead({
+  title: "notes",
+});
+
+watchEffect(() => {
+  if (!user.value) {
+    navigateTo("/");
   }
-
-  if (title.value.trim().length === 0) {
-    return;
-  }
-
-  loading.value = true;
-
-  const { data, error } = await client.from("notes").insert([
-    {
-      user_id: user.value.id,
-      title: title.value,
-      body: body.value,
-    },
-  ]);
-
-  if (error) {
-    console.log(error);
-  }
-
-  title.value = "";
-  body.value = "";
-
-  loading.value = false;
-
-  refreshNotes();
-};
+});
 </script>
 
 <template>
-  <h1>Notes</h1>
-  <p>{{ user?.value?.id }}</p>
+  <div
+    v-if="currentNote"
+    class="fixed z-20 inset-0 bg-white bg-opacity-50 backdrop-blur-xl grid place-items-center p-6"
+    @click="currentNote = ''"
+  >
+    <UpdateNoteForm :noteId="currentNote" />
+  </div>
 
-  <form @submit.prevent="createNote">
-    <div class="flex flex-col gap-1">
-      <label for="title">title</label>
-      <input type="text" v-model="title" />
-    </div>
+  <div class="px-4 max-w-4xl mx-auto py-12 flex flex-col gap-8">
+    <CreateNoteForm />
 
-    <div class="flex flex-col gap-1">
-      <label for="body">body</label>
-      <textarea v-model="body"></textarea>
-    </div>
+    <ul class="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <li
+        v-for="note in notes"
+        :key="note.id"
+        @click="currentNote = note.id"
+        class="p-4 rounded-xl border"
+      >
+        <p class="font-bold">{{ note.title }}</p>
 
-    <button>create note</button>
-  </form>
-
-  <ul>
-    <li v-for="note in notes" :key="note.id">
-      <strong>{{ note.title }}</strong>
-
-      <p>{{ note.body }}</p>
-    </li>
-  </ul>
+        <p class="text-sm">{{ note.body }}</p>
+      </li>
+    </ul>
+  </div>
 </template>
