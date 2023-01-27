@@ -8,18 +8,8 @@ const body = ref("");
 
 const loading = ref(false);
 
-const { refresh: refreshNotes } = await useAsyncData("notes", async () => {
-  const { data } = await client
-    .from("notes")
-    .select("*")
-    .eq("user_id", user?.value?.id)
-    .order("created_at");
-
-  return data;
-});
-
 const createNote = async () => {
-  if (user.value?.id === undefined) {
+  if (user.value === null) {
     return;
   }
 
@@ -27,26 +17,20 @@ const createNote = async () => {
     return;
   }
 
-  loading.value = true;
-
-  const { data, error } = await client.from("notes").upsert([
-    {
+  const { data } = await client
+    .from("notes")
+    .insert({
       user_id: user.value.id,
       title: title.value,
       body: body.value,
-    },
-  ]);
+    })
+    .select("*")
+    .single();
 
-  if (error) {
-    console.log(error);
+  if (data) {
+    title.value = "";
+    body.value = "";
   }
-
-  title.value = "";
-  body.value = "";
-
-  loading.value = false;
-
-  refreshNotes();
 };
 </script>
 
