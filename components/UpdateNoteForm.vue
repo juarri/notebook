@@ -21,6 +21,7 @@ const { data: note } = await useAsyncData("note", async () => {
 
 const title = ref(note.value?.title);
 const body = ref(note.value?.body);
+const pinned = ref(note.value?.pinned);
 
 const updateNote = async () => {
   if (user.value?.id === undefined) {
@@ -40,6 +41,7 @@ const updateNote = async () => {
     user_id: user.value.id,
     title: title.value,
     body: body.value,
+    pinned: pinned.value,
   });
 
   if (error) {
@@ -98,6 +100,11 @@ const deleteNote = async () => {
         class="border rounded py-2 px-4"
         rows="4"
       ></textarea>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="pinned" class="font-bold">Pinned</label>
+      <input type="checkbox" v-model="pinned" class="self-start" />
     </div>
 
     <div class="flex gap-4 justify-end">
